@@ -77,7 +77,3 @@ terraform destroy
     There is no undo. Only 'yes' will be accepted to confirm.
     Enter a value: 
 ```
-- Once the resources are destoryed you will see:
-```
-Destroy complete! Resources: 5 destroyed
-```
