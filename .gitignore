@@ -41,7 +41,7 @@ override.tf.json
 *.pem
 
 terraform.tfvars.json
-#terraform.tfvars
+terraform.tfvars
 
 # Ignore sensitive files
 terraform.tfstate.backup
