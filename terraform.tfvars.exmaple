@@ -1,3 +1,0 @@
-tfe_image_tag = "v202503-1" # Example TFE version
-#tfe_license = "<YOUR_TFE_LICENSE_KEY>" # Uncomment and set your TFE license key if required
-tfe_encryption_password = "Mystrongpassword123" # Example encryption password

@@ -46,3 +46,4 @@ terraform.tfvars
 # Ignore sensitive files
 terraform.tfstate.backup
 terraform.tfstate 
+license.auto.tfvars

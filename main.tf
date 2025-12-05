@@ -16,11 +16,12 @@ terraform {
 }
 
 provider "aws" {
-    region = var.region 
+  region = var.region
 }
 
 provider "acme" {
-  server_url = "https://acme-staging-v02.api.letsencrypt.org/directory"
+  # https://letsencrypt.org/docs/acme-protocol-updates/#acme-v2-rfc-8555
+  server_url = var.acme_server_url
 }
 
 # --- Data Sources to capture the latest Ubuntu AMI ---
@@ -67,7 +68,7 @@ resource "aws_iam_role" "ssm" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
     Statement = [{
-      Effect = "Allow",
+      Effect    = "Allow",
       Principal = { Service = "ec2.amazonaws.com" },
       Action    = "sts:AssumeRole"
     }]
@@ -117,21 +118,23 @@ resource "aws_instance" "this" {
   key_name                    = null
 
   root_block_device {
-    volume_size = 100            # in GiB
+    volume_size = 100 # in GiB
     volume_type = "gp3"
-    encrypted   = true           # optional but recommended
+    encrypted   = true # optional but recommended
   }
 
   user_data = templatefile("${path.module}/cloud-init.tftpl", {
-    server_cert  = indent(6, acme_certificate.server.certificate_pem)
-    private_key  = indent(6, acme_certificate.server.private_key_pem)
-    bundle_certs = indent(6, acme_certificate.server.issuer_pem)
-    tfe_license            = var.tfe_license
-    tfe_hostname           = var.dns_record
+    server_cert             = indent(6, acme_certificate.server.certificate_pem)
+    private_key             = indent(6, acme_certificate.server.private_key_pem)
+    bundle_certs            = indent(6, acme_certificate.server.issuer_pem)
+    email                   = var.email
+    tfe_license             = var.tfe_license
+    tfe_hostname            = var.dns_record
+    tfe_admin_password      = var.tfe_admin_password
     tfe_encryption_password = var.tfe_encryption_password
-    tfe_image_tag          = var.tfe_image_tag
-    certs_dir = "/etc/terraform-enterprise/certs"
-    data_dir = "/opt/terraform-enterprise/data"
+    tfe_image_tag           = var.tfe_image_tag
+    certs_dir               = "/etc/terraform-enterprise/certs"
+    data_dir                = "/opt/terraform-enterprise/data"
   })
 
   tags = { Name = var.name }
@@ -162,7 +165,7 @@ resource "tls_private_key" "acme_account" {
 # ACME registration (your Let's Encrypt account)
 resource "acme_registration" "this" {
   account_key_pem = tls_private_key.acme_account.private_key_pem
-  email_address   = "mohamed.abdelbaset@hashicorp.com"
+  email_address   = var.email
 }
 
 # ACME certificate for your FQDN
