@@ -127,6 +127,44 @@ write_files:
     content: |
       ${tfe_license}
 
+  - path: "/tmp/payload.json"
+    permissions: "0755"
+    owner: "root:root"
+    content: |
+      {
+        "username": "admin",
+        "email": "admin@admin.com",
+        "password": "${tfe_encryption_password}"
+      }
+
+  - path: "/usr/local/bin/tfe-admin-user.sh"
+    permissions: "0755"
+    owner: "root:root"
+    content: |
+      #!/usr/bin/env bash
+       
+      pushd /etc/terraform-enterprise
+      
+      # wait until tfe is up and running
+      while ! curl -ksfS --connect-timeout 5 https://${tfe_hostname}/_health_check; do
+        sleep 5
+      done
+      
+      FILE=iact.token
+      if [ ! -e "$FILE" ] || [ ! -s "$FILE" ]; then
+        echo info: generating iact token $FILE
+        podman exec terraform-enterprise-terraform-enterprise tfectl admin token |  tr -cd '[:print:]' |  tee iact.token
+      fi
+
+      FILE=admin.token
+      if [ ! -e "$FILE" ] || [ ! -s "$FILE" ]; then
+        echo info: generating admin token $FILE
+        URL="https://${tfe_hostname}/admin/initial-admin-user?token=$(cat iact.token)"
+        curl -kL --globoff --header "Content-Type: application/json" --request POST --data @/tmp/payload.json "${URL}"  | jq -r '.token' | tee admin.token
+      fi
+
+      popd
+
   - path: "/usr/local/bin/tfe-bootstrap.sh"
     permissions: "0755"
     owner: "root:root"

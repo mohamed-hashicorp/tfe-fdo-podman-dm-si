@@ -128,6 +128,7 @@ resource "aws_instance" "this" {
     bundle_certs            = indent(6, acme_certificate.server.issuer_pem)
     tfe_license             = var.tfe_license
     tfe_hostname            = var.dns_record
+    tfe_admin_password      = var.tfe_admin_password
     tfe_encryption_password = var.tfe_encryption_password
     tfe_image_tag           = var.tfe_image_tag
     certs_dir               = "/etc/terraform-enterprise/certs"

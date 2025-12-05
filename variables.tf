@@ -29,6 +29,12 @@ variable "tfe_license" {
   sensitive   = true
 }
 
+variable "tfe_admin_password" {
+  description = "Password used for TFE admin user."
+  type        = string
+  sensitive   = true
+}
+
 variable "tfe_encryption_password" {
   description = "Password used to encrypt TFE data."
   type        = string
