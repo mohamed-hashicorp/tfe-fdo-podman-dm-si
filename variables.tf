@@ -40,11 +40,6 @@ variable "tfe_image_tag" {
   description = "TFE image version to install"
 }
 
-variable "s3_bucket_name" {
-  type        = string
-  description = "The name of the S3 bucket"
-}
-
 variable "rds_password" {
   type        = string
   description = "The password for the RDS instance"
