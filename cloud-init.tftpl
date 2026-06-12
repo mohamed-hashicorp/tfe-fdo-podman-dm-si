@@ -134,7 +134,7 @@ write_files:
       {
         "username": "admin",
         "email": "${email}",
-        "password": "${tfe_encryption_password}"
+        "password": "${tfe_admin_password}"
       }
 
   - path: "/usr/local/bin/tfe-admin-user.sh"
@@ -193,7 +193,7 @@ write_files:
 
 runcmd:
   - mkdir -p /etc/terraform-enterprise/certs
-  - chmod 700 /etc/terraform-enterprise/certs
+  - chmod 755 /etc/terraform-enterprise/certs
   - mkdir -p ${data_dir}
   - bash /usr/local/bin/tfe-bootstrap.sh
   - bash /usr/local/bin/tfe-admin-user.sh

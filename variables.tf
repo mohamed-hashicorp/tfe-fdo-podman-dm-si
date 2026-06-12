@@ -56,8 +56,14 @@ variable "tfe_image_tag" {
   description = "TFE image version to install"
 }
 
-variable "rds_password" {
+variable "certs_dir" {
   type        = string
-  description = "The password for the RDS instance"
-  sensitive   = true
+  description = "Host directory where TLS certs are written and mounted into the TFE container"
+  default     = "/etc/terraform-enterprise/certs"
+}
+
+variable "data_dir" {
+  type        = string
+  description = "Host directory for TFE persistent data (disk operational mode)"
+  default     = "/opt/terraform-enterprise/data"
 }

@@ -85,14 +85,14 @@ resource "aws_iam_instance_profile" "ssm" {
   role = aws_iam_role.ssm.name
 }
 
-# --- Security Group (HTTP Only) ---
+# --- Security Group (HTTPS Only) ---
 resource "aws_security_group" "web" {
   name        = "${var.name}-sg"
-  description = "Allow HTTP only"
+  description = "Allow HTTPS only"
   vpc_id      = data.aws_vpc.default.id
 
   ingress {
-    description = "HTTP"
+    description = "HTTPS"
     from_port   = 443
     to_port     = 443
     protocol    = "tcp"
@@ -115,7 +115,6 @@ resource "aws_instance" "this" {
   vpc_security_group_ids      = [aws_security_group.web.id]
   associate_public_ip_address = true
   iam_instance_profile        = aws_iam_instance_profile.ssm.name
-  key_name                    = null
 
   root_block_device {
     volume_size = 100 # in GiB
@@ -123,7 +122,9 @@ resource "aws_instance" "this" {
     encrypted   = true # optional but recommended
   }
 
-  user_data = templatefile("${path.module}/cloud-init.tftpl", {
+  # gzip-compressed so the rendered cloud-config (TFE license + PEM certs) stays
+  # under EC2's 16 KB user_data limit. cloud-init auto-detects and decompresses it.
+  user_data_base64 = base64gzip(templatefile("${path.module}/cloud-init.tftpl", {
     server_cert             = indent(6, acme_certificate.server.certificate_pem)
     private_key             = indent(6, acme_certificate.server.private_key_pem)
     bundle_certs            = indent(6, acme_certificate.server.issuer_pem)
@@ -133,9 +134,9 @@ resource "aws_instance" "this" {
     tfe_admin_password      = var.tfe_admin_password
     tfe_encryption_password = var.tfe_encryption_password
     tfe_image_tag           = var.tfe_image_tag
-    certs_dir               = "/etc/terraform-enterprise/certs"
-    data_dir                = "/opt/terraform-enterprise/data"
-  })
+    certs_dir               = var.certs_dir
+    data_dir                = var.data_dir
+  }))
 
   tags = { Name = var.name }
 }
@@ -185,39 +186,3 @@ resource "acme_certificate" "server" {
     }
   }
 }
-
-# Store cert and ket in SSM Parameter Store
-resource "aws_ssm_parameter" "tls_cert" {
-  name  = "/tls/server/cert"
-  type  = "SecureString"
-  value = acme_certificate.server.certificate_pem
-}
-
-resource "aws_ssm_parameter" "tls_key" {
-  name  = "/tls/server/key"
-  type  = "SecureString"
-  value = acme_certificate.server.private_key_pem
-}
-
-# IAM Policy to allow EC2 instance to read TLS certs from SSM Parameter Store
-resource "aws_iam_role_policy" "ssm_tls_access" {
-  role = aws_iam_role.ssm.id
-
-  policy = jsonencode({
-    Version = "2012-10-17",
-    Statement = [
-      {
-        Effect = "Allow",
-        Action = [
-          "ssm:GetParameter",
-          "ssm:GetParameters"
-        ],
-        Resource = [
-          "arn:aws:ssm:${var.region}:${data.aws_caller_identity.current.account_id}:parameter/tls/server/*"
-        ]
-      }
-    ]
-  })
-}
-
-data "aws_caller_identity" "current" {}
